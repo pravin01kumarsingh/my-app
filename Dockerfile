@@ -1,7 +1,14 @@
 # Stage 1: Build/Prepare
-FROM node:20-slim AS builder
+FROM node:22-slim AS builder
 
 WORKDIR /app
+
+# Install build dependencies for native modules (like better-sqlite3)
+RUN apt-get update && apt-get install -y \
+    python3 \
+    make \
+    g++ \
+    && rm -rf /var/lib/apt/lists/*
 
 # Copy server package files and install dependencies
 COPY server/package*.json ./server/
@@ -9,12 +16,9 @@ WORKDIR /app/server
 RUN npm install --production
 
 # Stage 2: Runtime
-FROM node:20-slim
+FROM node:22-slim
 
 WORKDIR /app
-
-# Install basic tools for SQLite if needed (better-sqlite3 comes with prebuilds usually)
-# RUN apt-get update && apt-get install -y sqlite3 && rm -rf /var/lib/apt/lists/*
 
 # Copy built dependencies
 COPY --from=builder /app/server/node_modules ./server/node_modules
