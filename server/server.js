@@ -14,9 +14,11 @@ const MAX_FILE = 45 * 1024 * 1024;
 const ROOT = path.join(__dirname, "..");
 const PUBLIC = path.join(ROOT, "public");
 const UPLOAD_ROOT = path.join(__dirname, "uploads");
-const DB_PATH = path.join(__dirname, "data.sqlite");
+const DATA_ROOT = path.join(__dirname, "data");
+const DB_PATH = path.join(DATA_ROOT, "data.sqlite");
 
 fs.mkdirSync(UPLOAD_ROOT, { recursive: true });
+fs.mkdirSync(DATA_ROOT, { recursive: true });
 
 const db = new Database(DB_PATH);
 db.pragma("journal_mode = WAL");

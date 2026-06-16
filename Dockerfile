@@ -33,7 +33,7 @@ ENV NODE_ENV=production
 ENV SESSION_SECRET=change-me-in-portainer-env
 
 # Create data directories for volumes
-RUN mkdir -p /app/server/uploads
+RUN mkdir -p /app/server/uploads /app/server/data
 
 # Expose port
 EXPOSE 3000
