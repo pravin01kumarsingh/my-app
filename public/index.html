@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GPS Management System</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div id="authPanel" class="auth-panel">
+    <div class="auth-card">
+      <div class="auth-card__logo" aria-hidden="true">◎</div>
+      <h1 class="auth-card__title">GPS Management System</h1>
+      <p class="auth-card__hint">Sign in to access your fleet records.</p>
+      <div class="auth-tabs" role="tablist" id="authTabs">
+        <button type="button" class="auth-tab auth-tab--active" id="tabLogin" role="tab" aria-selected="true">Login</button>
+      </div>
+      <p class="auth-error" id="authError" hidden></p>
+      <form id="formLogin" class="auth-form" autocomplete="username">
+        <label>Username <input name="username" class="input" required minlength="3" maxlength="32" pattern="[a-zA-Z0-9._-]+" /></label>
+        <label>Password <input name="password" type="password" class="input" required minlength="5" autocomplete="current-password" /></label>
+        <button type="submit" class="btn btn--primary btn--block">Login</button>
+      </form>
+    </div>
+  </div>
+
+  <div id="mainApp" class="app-layout" hidden>
+    <nav class="sidebar">
+      <div class="sidebar__header">
+        <span class="sidebar__logo">◎</span>
+        <h1 class="sidebar__title">GPS Manager</h1>
+      </div>
+      <ul class="sidebar__nav">
+        <li><button type="button" class="nav-btn nav-btn--active" data-nav="pageHome">Dashboard</button></li>
+        <li><button type="button" class="nav-btn" data-nav="pageGPS">GPS Management</button></li>
+        <li><button type="button" class="nav-btn" data-nav="pageProjects">Projects</button></li>
+        <li><button type="button" class="nav-btn" data-nav="pageTransporters">Transporters</button></li>
+      </ul>
+      <div class="sidebar__footer">
+        <span class="sidebar__user" id="headerUser"></span>
+        <button type="button" class="btn btn--ghost btn--small btn--block" id="btnLogout">Log out</button>
+      </div>
+    </nav>
+
+    <div class="content-area">
+      <header class="header">
+        <div id="bulkActions" class="bulk-actions" hidden>
+          <span id="selectionCount" class="bulk-actions__count">0 records selected</span>
+          <button type="button" class="btn btn--primary btn--small" id="btnBulkEdit">Bulk Edit</button>
+          <button type="button" class="btn btn--danger btn--small admin-only" id="btnBulkDelete">Bulk Delete</button>
+          <button type="button" class="btn btn--ghost btn--small" id="btnBulkCancel">Cancel</button>
+        </div>
+        <div class="header__actions" id="appActions">
+          <button type="button" class="btn btn--ghost" id="btnChangePassword">Password</button>
+          <button type="button" class="btn btn--ghost" id="btnManageUsers" hidden>Manage Users</button>
+          <label class="sr-only" for="search">Search</label>
+          <input type="search" id="search" class="input input--search" placeholder="Search..." autocomplete="off" />
+          <button type="button" class="btn btn--primary admin-only" id="btnAdd">Add record</button>
+          <button type="button" class="btn btn--primary admin-only" id="btnBulkAddOpen">Bulk Add GPS</button>
+          <button type="button" class="btn btn--ghost" id="btnExport">Export CSV</button>
+          <label class="btn btn--ghost btn--file admin-only">
+            Import CSV
+            <input type="file" id="importFile" accept=".csv,text/csv" hidden />
+          </label>
+        </div>
+      </header>
+
+      <main class="main">
+        <section id="pageHome" class="page">
+          <h2 class="page-title">Dashboard</h2>
+          <div class="stats-grid">
+            <div class="stat-card" data-stat="installed" title="Click to see project-wise breakdown">
+              <span class="stat-card__label">Total GPS Installed</span>
+              <span class="stat-card__value" id="statInstalled">0</span>
+            </div>
+            <div class="stat-card" data-stat="inStock" title="Click to see project-wise breakdown">
+              <span class="stat-card__label">Total GPS In Stock</span>
+              <span class="stat-card__value" id="statInStock">0</span>
+            </div>
+            <div class="stat-card" data-stat="underRecovery" title="Click to see project-wise breakdown">
+              <span class="stat-card__label">Under Recovery</span>
+              <span class="stat-card__value" id="statUnderRecovery">0</span>
+            </div>
+          </div>
+        </section>
+
+        <section id="pageGPS" class="page" hidden>
+          <h2 class="page-title">GPS Management</h2>
+          <div class="table-wrap">
+            <table class="data-table">
+              <thead>
+                <tr class="data-table__section-row">
+                  <th rowspan="2" class="col-select"><input type="checkbox" id="selectAll" /></th>
+                  <th rowspan="2" class="col-sl">Sl.NO.</th>
+                  <th rowspan="2" class="col-project"><button type="button" class="sort-btn" data-sort="project">Project <span class="sort-icon">↕</span></button></th>
+                  <th colspan="9" class="section section--install">GPS installation</th>
+                  <th colspan="6" class="section section--remove">GPS removal</th>
+                  <th rowspan="2" class="col-actions admin-only">Actions</th>
+                </tr>
+                <tr class="data-table__headers">
+                  <th><button type="button" class="sort-btn" data-sort="transporter">Transporter <span class="sort-icon">↕</span></button><div class="resizer"></div></th>
+                  <th>Req. Letter<div class="resizer"></div></th>
+                  <th>Date<div class="resizer"></div></th>
+                  <th><button type="button" class="sort-btn" data-sort="vehicleNo">Vehicle <span class="sort-icon">↕</span></button><div class="resizer"></div></th>
+                  <th>Email<div class="resizer"></div></th>
+                  <th>Installed<div class="resizer"></div></th>
+                  <th>IMEI No.<div class="resizer"></div></th>
+                  <th>Inst. Date<div class="resizer"></div></th>
+                  <th>Sign.<div class="resizer"></div></th>
+                  <th>Rem. Letter<div class="resizer"></div></th>
+                  <th>Date<div class="resizer"></div></th>
+                  <th>Rem. Status<div class="resizer"></div></th>
+                  <th>Rem. Date<div class="resizer"></div></th>
+                  <th>Sign.<div class="resizer"></div></th>
+                  <th>Kept at<div class="resizer"></div></th>
+                </tr>
+              </thead>
+              <tbody id="tbody"></tbody>
+            </table>
+          </div>
+          <p class="empty" id="emptyState" hidden>No records yet.</p>
+        </section>
+
+        <section id="pageProjects" class="page" hidden>
+          <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+            <h2 class="page-title" style="margin:0">Project Database</h2>
+            <button type="button" class="btn btn--primary admin-only" id="btnAddProjectPage">Add Project</button>
+          </div>
+          <div class="table-wrap">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Name<div class="resizer"></div></th>
+                  <th>Details<div class="resizer"></div></th>
+                  <th style="text-align:right">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="tbodyProjectsPage"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <section id="pageTransporters" class="page" hidden>
+          <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+            <h2 class="page-title" style="margin:0">Transporter Database</h2>
+            <button type="button" class="btn btn--primary admin-only" id="btnAddTransporterPage">Add Transporter</button>
+          </div>
+          <div class="table-wrap">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Name<div class="resizer"></div></th>
+                  <th>Details<div class="resizer"></div></th>
+                  <th style="text-align:right">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="tbodyTransportersPage"></tbody>
+            </table>
+          </div>
+        </section>
+      </main>
+
+      <footer class="footer">
+        <span>GPS Management System &copy; 2026</span>
+        <button type="button" class="link-btn admin-only" id="btnClear">Delete all records…</button>
+      </footer>
+    </div>
+  </div>
+
+  <dialog class="modal" id="modal" aria-labelledby="modalTitle">
+    <form method="dialog" class="modal__form" id="form">
+      <h2 class="modal__title" id="modalTitle">Edit record</h2>
+      <div class="modal__grid">
+        <fieldset class="fieldset">
+          <legend>GPS installation</legend>
+          <div class="letter-field">
+            <label>Request letter — reference / notes (optional) <input name="requestLetterText" class="input input--uppercase" placeholder="Reference no., remarks…" /></label>
+            <div class="file-row">
+              <label class="btn btn--ghost btn--file">Attach PDF or image
+                <input type="file" id="requestLetterFileInput" accept="application/pdf,image/*" hidden />
+              </label>
+              <span class="file-status" id="requestLetterFileStatus" aria-live="polite"></span>
+              <button type="button" class="link-btn" id="btnViewRequestLetterFile" hidden>View file</button>
+              <button type="button" class="link-btn link-btn--warn" id="btnRemoveRequestLetterFile" hidden>Remove file</button>
+            </div>
+          </div>
+          <label>Request date <input name="requestDate" type="date" class="input" /></label>
+          <label class="check"><input name="emailSent" type="checkbox" /> Email sent</label>
+          <label>Project
+            <input name="project" class="input input--uppercase" list="projectList" />
+            <datalist id="projectList"></datalist>
+          </label>
+          <label>Transporter
+            <input name="transporter" class="input input--uppercase" list="transporterList" />
+            <datalist id="transporterList"></datalist>
+          </label>
+          <label>Vehicle no. <input name="vehicleNo" class="input input--uppercase" required /></label>
+          <label class="check"><input name="gpsInstalled" type="checkbox" /> GPS installed</label>
+          <label>Installation date <input name="installationDate" type="date" class="input" /></label>
+          <label>IMEI no. <input name="imei" class="input input--uppercase" inputmode="numeric" /></label>
+          <label>Signature <input name="signature" class="input input--uppercase" placeholder="Name or initials" /></label>
+        </fieldset>
+        <fieldset class="fieldset">
+          <legend>GPS removal</legend>
+          <div class="letter-field">
+            <label>Deregister letter — reference / notes (optional) <input name="deregisterLetterText" class="input input--uppercase" placeholder="Reference no., remarks…" /></label>
+            <div class="file-row">
+              <label class="btn btn--ghost btn--file">Attach PDF or image
+                <input type="file" id="deregisterLetterFileInput" accept="application/pdf,image/*" hidden />
+              </label>
+              <span class="file-status" id="deregisterLetterFileStatus" aria-live="polite"></span>
+              <button type="button" class="link-btn" id="btnViewDeregisterLetterFile" hidden>View file</button>
+              <button type="button" class="link-btn link-btn--warn" id="btnRemoveDeregisterLetterFile" hidden>Remove file</button>
+            </div>
+          </div>
+          <label>Removal request date <input name="removalRequestDate" type="date" class="input" /></label>
+          <label>Removed On Date <input name="deregistrationDate" type="date" class="input" /></label>
+          <label class="check"><input name="gpsSubmitted" type="checkbox" /> Removal Status</label>
+          <label>Signature <input name="receivedBy" class="input input--uppercase" /></label>
+          <label>GPS is kept at <input name="gpsKeptAt" class="input input--uppercase" /></label>
+          <label class="check"><input name="portalUpdated" type="checkbox" /> Portal updated</label>
+        </fieldset>
+      </div>
+      <div class="modal__footer">
+        <button type="submit" class="btn btn--primary" value="save">Save</button>
+        <button type="button" class="btn btn--ghost" id="btnModalCancel">Cancel</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog class="modal" id="modalUsers" aria-labelledby="modalUsersTitle">
+    <div class="modal__form">
+      <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+        <h2 class="modal__title" id="modalUsersTitle" style="margin:0">User Management</h2>
+        <button type="button" class="btn btn--primary btn--small" id="btnAddUser">Add User</button>
+      </div>
+      <div class="table-wrap">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Username</th>
+              <th>Role</th>
+              <th>Created At</th>
+              <th style="text-align:right">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="tbodyUsers"></tbody>
+        </table>
+      </div>
+      <div class="modal__footer">
+        <button type="button" class="btn btn--ghost" id="btnModalUsersClose">Close</button>
+      </div>
+    </div>
+  </dialog>
+
+  <dialog class="modal" id="modalUserEdit" aria-labelledby="modalUserEditTitle">
+    <form class="modal__form" id="formUserEdit">
+      <h2 class="modal__title" id="modalUserEditTitle">Add New User</h2>
+      <div class="modal__grid" style="grid-template-columns: 1fr;">
+        <label id="labelUsername">Username <input name="username" class="input" required minlength="3" maxlength="32" pattern="[a-zA-Z0-9._-]+" /></label>
+        <label>Password <input name="password" type="password" class="input" required minlength="5" /></label>
+        <label id="labelRole">Role 
+          <select name="role" class="input">
+            <option value="user">User (Read-only)</option>
+            <option value="admin">Admin (Full Access)</option>
+          </select>
+        </label>
+      </div>
+      <div class="modal__footer">
+        <button type="submit" class="btn btn--primary">Save</button>
+        <button type="button" class="btn btn--ghost" id="btnModalUserEditCancel">Cancel</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog class="modal" id="modalPassword" aria-labelledby="modalPasswordTitle">
+    <form class="modal__form" id="formPassword">
+      <h2 class="modal__title" id="modalPasswordTitle">Change Password</h2>
+      <div class="modal__grid" style="grid-template-columns: 1fr;">
+        <label>New Password <input name="password" type="password" class="input" required minlength="5" /></label>
+        <label>Confirm Password <input name="passwordConfirm" type="password" class="input" required minlength="5" /></label>
+      </div>
+      <div class="modal__footer">
+        <button type="submit" class="btn btn--primary">Change Password</button>
+        <button type="button" class="btn btn--ghost" id="btnModalPasswordCancel">Cancel</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog class="modal" id="modalBulk" aria-labelledby="modalBulkTitle">
+    <form method="dialog" class="modal__form" id="formBulk">
+      <h2 class="modal__title" id="modalBulkTitle">Bulk Edit Selected Records</h2>
+      <p class="modal__hint" style="margin-bottom: 1.5rem; color: var(--muted); font-size: 0.875rem;">
+        Check the box next to a field to update it for all selected records. Fields without a check will remain unchanged.
+      </p>
+      <div class="modal__grid">
+        <fieldset class="fieldset">
+          <legend>GPS installation</legend>
+          <label class="bulk-label"><input type="checkbox" data-bulk-toggle="requestLetterText" /> Request letter notes <input name="requestLetterText" class="input input--uppercase" disabled /></label>
+          <label class="bulk-label"><input type="checkbox" data-bulk-toggle="requestDate" /> Request date <input name="requestDate" type="date" class="input" disabled /></label>
+          <label class="check bulk-label"><input type="checkbox" data-bulk-toggle="emailSent" /> <input name="emailSent" type="checkbox" disabled /> Email sent</label>
+          <label class="bulk-label"><input type="checkbox" data-bulk-toggle="project" /> Project <input name="project" class="input input--uppercase" list="projectList" disabled /></label>
+          <label class="bulk-label"><input type="checkbox" data-bulk-toggle="transporter" /> Transporter <input name="transporter" class="input input--uppercase" list="transporterList" disabled /></label>
+          <label class="check bulk-label"><input type="checkbox" data-bulk-toggle="gpsInstalled" /> <input name="gpsInstalled" type="checkbox" disabled /> GPS installed</label>
+          <label class="bulk-label"><input type="checkbox" data-bulk-toggle="installationDate" /> Installation date <input name="installationDate" type="date" class="input" disabled /></label>
+          <label class="bulk-label"><input type="checkbox" data-bulk-toggle="signature" /> Signature <input name="signature" class="input input--uppercase" disabled /></label>
+        </fieldset>
+        <fieldset class="fieldset">
+          <legend>GPS removal</legend>
+          <label class="bulk-label"><input type="checkbox" data-bulk-toggle="deregisterLetterText" /> Removal letter notes <input name="deregisterLetterText" class="input input--uppercase" disabled /></label>
+          <label class="bulk-label"><input type="checkbox" data-bulk-toggle="removalRequestDate" /> Removal request date <input name="removalRequestDate" type="date" class="input" disabled /></label>
+          <label class="bulk-label"><input type="checkbox" data-bulk-toggle="deregistrationDate" /> Removed On Date <input name="deregistrationDate" type="date" class="input" disabled /></label>
+          <label class="check bulk-label"><input type="checkbox" data-bulk-toggle="gpsSubmitted" /> <input name="gpsSubmitted" type="checkbox" disabled /> Removal Status</label>
+          <label class="bulk-label"><input type="checkbox" data-bulk-toggle="receivedBy" /> Signature <input name="receivedBy" class="input input--uppercase" disabled /></label>
+          <label class="bulk-label"><input type="checkbox" data-bulk-toggle="gpsKeptAt" /> GPS is kept at <input name="gpsKeptAt" class="input input--uppercase" disabled /></label>
+          <label class="check bulk-label"><input type="checkbox" data-bulk-toggle="portalUpdated" /> <input name="portalUpdated" type="checkbox" disabled /> Portal updated</label>
+        </fieldset>
+      </div>
+      <div class="modal__footer">
+        <button type="submit" class="btn btn--primary" value="save">Update Selected</button>
+        <button type="button" class="btn btn--ghost" id="btnModalBulkCancel">Cancel</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog class="modal" id="modalProjectEdit" aria-labelledby="modalProjectEditTitle">
+    <form class="modal__form" id="formProjectEdit">
+      <h2 class="modal__title" id="modalProjectEditTitle">Add Project</h2>
+      <div class="modal__grid" style="grid-template-columns: 1fr;">
+        <label>Name <input name="name" class="input input--uppercase" required /></label>
+        <label>Details <input name="details" class="input" /></label>
+      </div>
+      <div class="modal__footer">
+        <button type="submit" class="btn btn--primary">Save</button>
+        <button type="button" class="btn btn--ghost" id="btnModalProjectEditCancel">Cancel</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog class="modal" id="modalTransporters" aria-labelledby="modalTransportersTitle">
+    <div class="modal__form">
+      <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+        <h2 class="modal__title" id="modalTransportersTitle" style="margin:0">Transporter Management</h2>
+        <button type="button" class="btn btn--primary btn--small" id="btnAddTransporter">Add Transporter</button>
+      </div>
+      <div class="table-wrap">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Details</th>
+              <th style="text-align:right">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="tbodyTransporters"></tbody>
+        </table>
+      </div>
+      <div class="modal__footer">
+        <button type="button" class="btn btn--ghost" id="btnModalTransportersClose">Close</button>
+      </div>
+    </div>
+  </dialog>
+
+  <dialog class="modal" id="modalTransporterEdit" aria-labelledby="modalTransporterEditTitle">
+    <form class="modal__form" id="formTransporterEdit">
+      <h2 class="modal__title" id="modalTransporterEditTitle">Add Transporter</h2>
+      <div class="modal__grid" style="grid-template-columns: 1fr;">
+        <label>Name <input name="name" class="input input--uppercase" required /></label>
+        <label>Details <input name="details" class="input" /></label>
+      </div>
+      <div class="modal__footer">
+        <button type="submit" class="btn btn--primary">Save</button>
+        <button type="button" class="btn btn--ghost" id="btnModalTransporterEditCancel">Cancel</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog class="modal" id="modalBulkAdd" aria-labelledby="modalBulkAddTitle">
+    <form class="modal__form" id="formBulkAdd">
+      <h2 class="modal__title" id="modalBulkAddTitle">Bulk Add GPS Units</h2>
+      <p class="modal__hint" style="margin-bottom: 1.5rem; color: var(--muted); font-size: 0.875rem;">
+        Add multiple GPS units to stock at once. These will be added with "In Stock" status and no vehicle number.
+      </p>
+      <div class="modal__grid">
+        <label>Total Number to Add <input name="count" type="number" class="input" required min="1" max="500" value="1" /></label>
+        <label>Project <input name="project" class="input input--uppercase" list="projectList" /></label>
+        <label>Transporter <input name="transporter" class="input input--uppercase" list="transporterList" /></label>
+        <div style="display:grid; grid-template-columns: 1fr 2fr; gap: 0.5rem;">
+          <label>IMEI Prefix <input name="imeiPrefix" class="input input--uppercase" placeholder="e.g. GPS" /></label>
+          <label>Start Number <input name="startImei" type="number" class="input" placeholder="e.g. 1001" /></label>
+        </div>
+      </div>
+      <div class="modal__footer">
+        <button type="submit" class="btn btn--primary">Add Units</button>
+        <button type="button" class="btn btn--ghost" id="btnModalBulkAddCancel">Cancel</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog class="modal" id="modalStatDetail" aria-labelledby="modalStatDetailTitle">
+    <div class="modal__form">
+      <h2 class="modal__title" id="modalStatDetailTitle">Project-wise Breakdown</h2>
+      <div class="table-wrap">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Project Name</th>
+              <th style="text-align:right">Count</th>
+            </tr>
+          </thead>
+          <tbody id="tbodyStatDetail"></tbody>
+          <tfoot>
+            <tr style="font-weight:700; background: var(--bg);">
+              <td>Total</td>
+              <td style="text-align:right" id="statDetailTotal">0</td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+      <div class="modal__footer">
+        <button type="button" class="btn btn--ghost" id="btnModalStatDetailClose">Close</button>
+      </div>
+    </div>
+  </dialog>
+
+  <script src="app.js"></script>
+</body>
+</html>
