@@ -1,6 +1,11 @@
 const path = require("path");
 const fs = require("fs");
 const crypto = require("crypto");
+if (!crypto.randomUUID) {
+  crypto.randomUUID = function () {
+    return crypto.randomBytes(16).toString("hex").replace(/^(.{8})(.{4})(.{4})(.{4})(.{12})$/, "$1-$2-$3-$4-$5");
+  };
+}
 const express = require("express");
 const session = require("express-session");
 const bcrypt = require("bcryptjs");
@@ -445,13 +450,13 @@ app.post("/api/records", requireAdmin, letterUploadGuard, (req, res) => {
 
     // Duplicate check
     if (data.vehicleNo) {
-      const existingVehicle = db.prepare("SELECT id FROM gps_records WHERE vehicle_no = ?").get(data.vehicleNo);
+      const existingVehicle = db.prepare("SELECT id FROM gps_records WHERE vehicle_no = ? COLLATE NOCASE").get(data.vehicleNo.trim());
       if (existingVehicle) {
         return res.status(409).json({ error: `Vehicle number ${data.vehicleNo} is already registered` });
       }
     }
-    if (data.imei) {
-      const existingImei = db.prepare("SELECT id FROM gps_records WHERE imei = ?").get(data.imei);
+    if (data.imei && data.imei.trim() !== "") {
+      const existingImei = db.prepare("SELECT id FROM gps_records WHERE imei = ? COLLATE NOCASE").get(data.imei.trim());
       if (existingImei) {
         return res.status(409).json({ error: `IMEI number ${data.imei} is already registered` });
       }
@@ -594,12 +599,12 @@ app.put("/api/records/:id", requireAdmin, letterUploadGuard, (req, res) => {
     }
 
     // Duplicate check
-    const existingVehicle = db.prepare("SELECT id FROM gps_records WHERE vehicle_no = ? AND id != ?").get(data.vehicleNo, id);
+    const existingVehicle = db.prepare("SELECT id FROM gps_records WHERE vehicle_no = ? COLLATE NOCASE AND id != ?").get(data.vehicleNo.trim(), id);
     if (existingVehicle) {
       return res.status(409).json({ error: `Vehicle number ${data.vehicleNo} is already registered` });
     }
-    if (data.imei) {
-      const existingImei = db.prepare("SELECT id FROM gps_records WHERE imei = ? AND id != ?").get(data.imei, id);
+    if (data.imei && data.imei.trim() !== "") {
+      const existingImei = db.prepare("SELECT id FROM gps_records WHERE imei = ? COLLATE NOCASE AND id != ?").get(data.imei.trim(), id);
       if (existingImei) {
         return res.status(409).json({ error: `IMEI number ${data.imei} is already registered` });
       }

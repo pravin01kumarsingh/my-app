@@ -28,7 +28,14 @@ const MAX_LETTER_BYTES = 45 * 1024 * 1024;
 /** @typedef {'requestLetter' | 'deregisterLetter'} LetterSlot */
 
 function uid() {
-  return crypto.randomUUID();
+  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+    return crypto.randomUUID();
+  }
+  return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
+    const r = (Math.random() * 16) | 0;
+    const v = c === "x" ? r : (r & 0x3) | 0x8;
+    return v.toString(16);
+  });
 }
 
 /** @param {unknown} a */
